@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Music Detection System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+    <h1>AI-Generated Music Detection System</h1>
+    <p>Multi-task CNN for Genre Classification & AI Audio Forensics</p>
+</header>
+
+<section class="summary">
+    <h2>Executive Summary</h2>
+    <p>
+        This system classifies music genres and detects whether a track is AI-generated.
+        Final performance reached <strong>100% human detection</strong> and 
+        <strong>92% AI detection accuracy</strong>.
+    </p>
+</section>
+
+<section class="metrics">
+    <h2>Final Performance</h2>
+    <div class="grid">
+        <div class="card">Human Detection<br><strong>100%</strong></div>
+        <div class="card">AI Detection<br><strong>92%</strong></div>
+        <div class="card">Human Genre<br><strong>84.8%</strong></div>
+        <div class="card">AI Genre<br><strong>85.3%</strong></div>
+    </div>
+</section>
+
+<section class="milestones">
+    <h2>Milestones</h2>
+
+    <div class="card">
+        <h3>Data Preparation</h3>
+        <p>1,000 GTZAN tracks audited and stratified into train/val/test splits.</p>
+    </div>
+
+    <div class="card">
+        <h3>Feature Engineering</h3>
+        <p>MFCCs, spectral features, and chroma used to represent audio.</p>
+    </div>
+
+    <div class="card">
+        <h3>ML Baseline</h3>
+        <p>SVM achieved 75.3% accuracy.</p>
+    </div>
+
+    <div class="card">
+        <h3>Deep Learning</h3>
+        <p>Custom CNN using spectrograms with parallel convolution branches.</p>
+    </div>
+
+    <div class="card">
+        <h3>AI Detection</h3>
+        <p>Dual-head model for genre + AI classification.</p>
+    </div>
+
+</section>
+
+<section class="architecture">
+    <h2>DetectiveCNN Architecture</h2>
+    <p>
+        Parallel convolution branches detect harmonic (frequency) and temporal (rhythm)
+        features before fusion into a shared representation.
+    </p>
+</section>
+
+<section class="results">
+    <h2>Key Result</h2>
+    <p>
+        Complete score separation:
+        Human: 0.00–0.20 | AI: 0.40–1.00
+    </p>
+</section>
+
+<footer>
+    <p>© 2026 AI Music Detection Project</p>
+</footer>
+
+</body>
+</html>
