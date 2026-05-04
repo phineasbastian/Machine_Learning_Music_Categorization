@@ -131,6 +131,15 @@
                 </tbody>
             </table>
             <p class="result-line">100% of 1,000 files processed &middot; zero NaN values &middot; data footprint reduced from ~1 GB raw audio to ~2 MB feature CSVs.</p>
+            <figure class="figure">
+                <div class="figure-frame">
+                    <img src="spectral_centroid_by_genre.png" alt="Box plot of spectral centroid values across the 10 GTZAN genres, showing pop, metal, hip-hop, and disco with the highest brightness, and classical, jazz, and blues with the lowest.">
+                </div>
+                <figcaption>
+                    <span class="fig-num">Figure 1</span>
+                    Spectral centroid (brightness) distribution across genres. Pop and metal cluster high; classical and jazz sit at the bottom &mdash; matching acoustic theory and validating the feature pipeline.
+                </figcaption>
+            </figure>
         </div>
     </article>
  
@@ -167,6 +176,15 @@
             <h3>Deep Learning &amp; The Structural Detective</h3>
             <p class="milestone-aim">Evolve from a feature-based SVM to a CNN operating directly on Mel-Spectrogram images &mdash; capturing pitch (frequency axis) and rhythm (time axis) simultaneously.</p>
             <p>Raw <code>.au</code> files were converted to 2D Mel-Spectrogram images: <strong>128 frequency bins &times; 1,292 time frames</strong>, dB-scaled and normalized to [0.0, 1.0].</p>
+            <figure class="figure">
+                <div class="figure-frame">
+                    <img src="mel_spectrograms_by_genre.png" alt="Grid of mel-spectrograms across all 10 GTZAN genres, showing distinctive patterns per genre.">
+                </div>
+                <figcaption>
+                    <span class="fig-num">Figure 2</span>
+                    Sample mel-spectrograms across all 10 GTZAN genres. Note the dense vertical striations of metal versus the sparse, harmonic structure of classical &mdash; exactly the kind of visual pattern the CNN is designed to learn.
+                </figcaption>
+            </figure>
             <h4>Parallel asymmetric convolutional kernels</h4>
             <div class="two-col">
                 <div class="card branch">
@@ -192,6 +210,15 @@
                 </tbody>
             </table>
             <p class="result-line">Final accuracy: 56&ndash;63% across 10 genres. Lower than unregularized runs but with significantly stronger generalization features for the forensic task. Metal (F1 = 0.86) and Classical (F1 = 0.88) showed near-perfect structural alignment.</p>
+            <figure class="figure">
+                <div class="figure-frame">
+                    <img src="cnn_confusion_matrix.png" alt="Confusion matrix for the 10-genre CNN classifier, with strong diagonals for reggae, classical, metal, and blues, and notable confusion between pop and hiphop.">
+                </div>
+                <figcaption>
+                    <span class="fig-num">Figure 3</span>
+                    CNN confusion matrix across the 10 GTZAN genres. Strong diagonal performance for reggae (20), classical (15), and metal (15). The pop / hip-hop overlap is the largest source of off-diagonal error &mdash; a key motivator for collapsing into 4 super-classes in Milestone 5.
+                </figcaption>
+            </figure>
         </div>
     </article>
  
