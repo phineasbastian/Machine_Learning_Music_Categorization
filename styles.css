@@ -718,7 +718,7 @@ code {
  
 .figure-frame img {
     display: block;
-    width: 30%;
+    width: 100%;
     height: auto;
     border-radius: 4px;
 }
