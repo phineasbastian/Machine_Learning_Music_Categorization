@@ -1,5 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
+
+<style>
+        /* Override the white box and force images to fit */
+        .figure-frame {
+            background: transparent !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+        
+        .figure-frame img {
+            width: 100% !important;
+            height: auto !important;
+            display: block;
+            border-radius: 8px; /* Adds a nice slight curve to your UI screenshots */
+        }
+    </style>
+</head>
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -83,6 +103,13 @@
  
 <section class="milestones">
     <h2>Project Milestones</h2>
+ 
+<figure class="figure" style="margin-bottom: 2rem;">
+			<div class="figure-frame" style="border: none; background: transparent; padding: 0;">
+				<img src="milestone.png" alt="Table detailing the 5 project milestones from Data Architecture to AI vs. Human Discriminator" style="width: 100%; height: auto; filter: invert(0.92) hue-rotate(180deg); border-radius: 8px;">
+			</div>
+	</figure>
+ 
  
     <article class="milestone">
         <div class="milestone-marker"><span>01</span></div>
@@ -460,17 +487,49 @@
             <p>Genre classification chart, AI/Human probability chart, final verdict text, and mel-spectrogram image of the first window.</p>
         </div>
     </div>
-    <h3 class="sub">Threshold Design</h3>
+	
+	<h3 class="sub">Sensitivity Slider & Threshold Design</h3>
+    <figure class="figure">
+        <div class="figure-frame">
+            <img src="slider.png" alt="Gradio UI sensitivity slider set to 50">
+        </div>
+    </figure>
+	
     <table class="data-table">
         <thead><tr><th>Sensitivity</th><th>Threshold</th><th>Behavior</th></tr></thead>
         <tbody>
-            <tr><td>0 (strictest)</td><td>0.95</td><td>Only flags very strong AI signal &mdash; almost nothing called AI</td></tr>
-            <tr><td>50 (default)</td><td>0.50</td><td>Sweet spot &mdash; matches validated test accuracy (100% human, 92% AI)</td></tr>
-            <tr><td>100 (loosest)</td><td>0.05</td><td>Flags almost anything &mdash; useful for high-risk ingestion screening</td></tr>
+            <tr><td>0 (ultra-strict)</td><td>0.95</td><td>Misses borderline AI but guarantees zero false positives</td></tr>
+            <tr><td>50 (default)</td><td>0.50</td><td>100% human correct, 100% AI correct</td></tr>
+            <tr><td>100 (loosest)</td><td>0.05</td><td>Catches everything including borderline AI, some false positives possible</td></tr>
         </tbody>
     </table>
     <h3 class="sub">Temporal Variation Handling</h3>
     <p>For songs whose style changes mid-track (a classical intro followed by a hip-hop beat), the windowed architecture handles this gracefully: each 30-second window votes independently, and averaged scores reflect the dominant character of the whole track. Mixed-origin tracks produce averaged forensic scores between the two poles &mdash; an honest representation of ambiguity rather than a forced binary.</p>
+
+
+
+<h3 class="sub">Detection in Action</h3>
+    <div class="grid two">
+        <figure class="figure">
+            <div class="figure-frame">
+                <img src="50_slider.png" alt="Audio analyzed at 50 sensitivity resulting in an AI Generated verdict">
+            </div>
+            <figcaption>
+                <strong>Audio at 50% Sensitivity.</strong> With the slider at the default 50 (0.50 threshold), the 76% AI probability correctly triggers an "AI GENERATED" verdict.
+            </figcaption>
+        </figure>
+        <figure class="figure">
+            <div class="figure-frame">
+                <img src="20_slider.png" alt="Same audio analyzed at 20 sensitivity resulting in a Human Original verdict">
+            </div>
+            <figcaption>
+                <strong>Same Audio at 20% Sensitivity.</strong> Dropping sensitivity to 20 raises the threshold to ~0.77. Because the 76% probability falls just short, the system strictly defaults to "HUMAN ORIGINAL".
+            </figcaption>
+        </figure>
+    </div>
+
+    <h3 class="sub">Audio Sourcing</h3>
+    <p>The human-generated audio tracks utilized to train, test, and validate this detection system were sourced from <a href="https://www.epidemicsound.com/music/tracks/61700cee-612a-3363-8349-76b594890ea3/" target="_blank">Epidemic Sound</a>.</p>
 </section>
  
 <section class="limitations">
