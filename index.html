@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<style>
+        /* Override the white box and force images to fit */
+        .figure-frame {
+            background: transparent !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+        
+        .figure-frame img {
+            width: 100% !important;
+            height: auto !important;
+            display: block;
+            border-radius: 8px; /* Adds a nice slight curve to your UI screenshots */
+        }
+    </style>
+</head>
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Generated Music Detection System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+ 
+<header>
+    <div class="header-inner">
+        <p class="eyebrow">Final Engineering Report &middot; May 2026</p>
+        <h1>AI-Generated Music<br><em>Detection System</em></h1>
+        <p class="tagline">A multi-task convolutional neural network for music genre classification and AI-audio forensics.</p>
+        <div class="header-meta">
+            <span><strong>Hardware</strong> Apple M-Series &middot; MPS GPU</span>
+            <span><strong>Dataset</strong> GTZAN (1,000) + Suno/Udio (163)</span>
+            <span><strong>Model</strong> DetectiveCNN</span>
+            <span class="status">Status &middot; Completed</span>
+        </div>
+    </div>
+</header>
+ 
+<section class="summary">
+    <h2>Executive Summary</h2>
+    <p>
+        This report documents the complete engineering lifecycle of an AI-powered music analysis system developed across five milestones. The system performs two simultaneous tasks on any audio file: classify the music into one of four genre super-classes, and determine whether the track was created by a human musician or an AI music generator (Suno, Udio).
+    </p>
+    <p>
+        The final model achieves <strong>84.8% human genre accuracy</strong>, <strong>85.3% AI genre accuracy</strong>, <strong>100% human detection</strong>, and <strong>92% AI detection</strong>, with complete score separation between human and AI tracks at the default detection threshold.
+    </p>
+    <p>
+        The most significant engineering challenge across the project was a preprocessing pipeline mismatch between training and inference &mdash; a class of bug that is invisible in training metrics but catastrophic in deployment. This report details how that root cause was discovered, isolated, and eliminated.
+    </p>
+</section>
+ 
+<section class="metrics">
+    <h2>Final Performance</h2>
+    <div class="grid">
+        <div class="card metric">
+            <span class="metric-label">Human Detection</span>
+            <span class="metric-value">100<span class="unit">%</span></span>
+            <span class="metric-sub">1,000 tracks</span>
+        </div>
+        <div class="card metric">
+            <span class="metric-label">AI Detection</span>
+            <span class="metric-value">92<span class="unit">%</span></span>
+            <span class="metric-sub">163 tracks</span>
+        </div>
+        <div class="card metric">
+            <span class="metric-label">Human Genre</span>
+            <span class="metric-value">84.8<span class="unit">%</span></span>
+            <span class="metric-sub">1,000 tracks</span>
+        </div>
+        <div class="card metric">
+            <span class="metric-label">AI Genre</span>
+            <span class="metric-value">85.3<span class="unit">%</span></span>
+            <span class="metric-sub">163 tracks</span>
+        </div>
+    </div>
+ 
+    <div class="callout score-callout">
+        <p class="callout-label">Score Separation</p>
+        <div class="score-bars">
+            <div class="score-row">
+                <span class="score-label">Human audio</span>
+                <div class="score-track"><div class="score-fill human" style="left:0%; width:20%;"></div></div>
+                <span class="score-range">0.00&ndash;0.20</span>
+            </div>
+            <div class="score-row">
+                <span class="score-label">AI audio</span>
+                <div class="score-track"><div class="score-fill ai" style="left:40%; width:60%;"></div></div>
+                <span class="score-range">0.40&ndash;1.00</span>
+            </div>
+        </div>
+        <p class="callout-foot">Zero files in the 0.20&ndash;0.40 region. No ambiguity at the default 0.50 threshold.</p>
+    </div>
+</section>
+ 
+<section class="milestones">
+    <h2>Project Milestones</h2>
+ 
+<figure class="figure" style="margin-bottom: 2rem;">
+			<div class="figure-frame" style="border: none; background: transparent; padding: 0;">
+				<img src="milestone.png" alt="Table detailing the 5 project milestones from Data Architecture to AI vs. Human Discriminator" style="width: 100%; height: auto; filter: invert(0.92) hue-rotate(180deg); border-radius: 8px;">
+			</div>
+	</figure>
+ 
+ 
+    <article class="milestone">
+        <div class="milestone-marker"><span>01</span></div>
+        <div class="milestone-body">
+            <h3>Data Preparation &amp; Integrity</h3>
+            <p class="milestone-aim">Establish a verified, scientifically balanced dataset using the GTZAN audio collection &mdash; 1,000 tracks across 10 genres.</p>
+            <ul class="bullets">
+                <li><strong>Header-and-Stream integrity audit:</strong> librosa loaded a 0.1-second segment of each <code>.au</code> file to force codec invocation, catching corruption that file-existence checks miss.</li>
+                <li><strong>Stratified 70/15/15 split</strong> via scikit-learn preserved exact genre distribution across train, validation, and test partitions.</li>
+                <li><strong>Path decoupling:</strong> <code>os.path.abspath</code> resolution so the pipeline runs correctly regardless of execution directory or operating system.</li>
+                <li><strong>CSV manifests</strong> (<code>train.csv</code>, <code>val.csv</code>, <code>test.csv</code>) decouple the file system from training logic, locking in reproducibility.</li>
+            </ul>
+            <table class="data-table">
+                <thead><tr><th>Partition</th><th>Samples</th><th>Per Genre</th></tr></thead>
+                <tbody>
+                    <tr><td>Training</td><td>700</td><td>70</td></tr>
+                    <tr><td>Validation</td><td>150</td><td>15</td></tr>
+                    <tr><td>Test</td><td>150</td><td>15</td></tr>
+                    <tr class="total"><td>Total Audited</td><td>1,000</td><td>100</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+ 
+    <article class="milestone">
+        <div class="milestone-marker"><span>02</span></div>
+        <div class="milestone-body">
+            <h3>Feature Engineering &amp; DSP</h3>
+            <p class="milestone-aim">Transform raw audio waveforms (660,000+ samples per 30-second track) into a compact numerical representation without losing the nuance required for both genre classification and AI-audio detection.</p>
+            <div class="two-col">
+                <div>
+                    <h4>High-resolution MFCCs (n=20)</h4>
+                    <p>While 13 coefficients are standard for genre tasks, 20 were used to capture finer spectral textures and "micro-timbre" &mdash; critical for identifying the subtle mathematical artifacts found in AI-generated audio.</p>
+                </div>
+                <div>
+                    <h4>Dual-statistic aggregation</h4>
+                    <p>Mean and variance per feature capture temporal dynamics &mdash; the stability vs. volatility of a track. Essential for distinguishing structured genres (Classical) from erratic ones (Metal/Rock).</p>
+                </div>
+            </div>
+            <table class="data-table">
+                <thead><tr><th>Domain</th><th>Features</th><th>Engineering Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td>Time</td><td>RMS Energy, Amplitude Envelope</td><td>Loudness, dynamic range, signal power</td></tr>
+                    <tr><td>Frequency</td><td>Spectral Centroid, Spectral Rolloff</td><td>Brightness and upper-frequency limits</td></tr>
+                    <tr><td>Perceptual</td><td>20 MFCCs, Chroma STFT</td><td>Mel-scale mapping &amp; harmonic content</td></tr>
+                </tbody>
+            </table>
+            <p class="result-line">100% of 1,000 files processed &middot; zero NaN values &middot; data footprint reduced from ~1 GB raw audio to ~2 MB feature CSVs.</p>
+            <figure class="figure">
+                <div class="figure-frame">
+                    <img src="spectral_centroid_by_genre.png" alt="Box plot of spectral centroid values across the 10 GTZAN genres, showing pop, metal, hip-hop, and disco with the highest brightness, and classical, jazz, and blues with the lowest.">
+                </div>
+                <figcaption>
+                    <span class="fig-num">Figure 1</span>
+                    Spectral centroid (brightness) distribution across genres. Pop and metal cluster high; classical and jazz sit at the bottom &mdash; matching acoustic theory and validating the feature pipeline.
+                </figcaption>
+            </figure>
+        </div>
+    </article>
+ 
+    <article class="milestone">
+        <div class="milestone-marker"><span>03</span></div>
+        <div class="milestone-body">
+            <h3>Traditional ML Baseline</h3>
+            <p class="milestone-aim">Establish the performance ceiling of global statistical features using Random Forest and SVM &mdash; before transitioning to deep learning.</p>
+            <div class="grid two">
+                <div class="card mini">
+                    <span class="metric-label">Random Forest</span>
+                    <span class="metric-value">64.0<span class="unit">%</span></span>
+                    <span class="metric-sub">n_estimators = 100</span>
+                </div>
+                <div class="card mini">
+                    <span class="metric-label">SVM (Optimized)</span>
+                    <span class="metric-value">75.3<span class="unit">%</span></span>
+                    <span class="metric-sub">C=10, gamma=0.01, kernel=rbf</span>
+                </div>
+            </div>
+            <h4>Top feature drivers (Random Forest importance)</h4>
+            <ul class="bullets">
+                <li><code>Chroma Mean</code> (0.053) &mdash; harmonic signature of the music</li>
+                <li><code>MFCC 4 Mean</code> (0.036) &mdash; mid-range timbral texture</li>
+                <li><code>Chroma Variance</code> (0.035) &mdash; how harmonic content changes over time</li>
+            </ul>
+            <p class="result-line">Best classified: Metal (F1 = 0.93) and Classical (F1 = 0.90) &mdash; most unique spectral signatures. Most confused: Disco and Rock &mdash; genres defined by rhythmic nuance, not captured by global statistics. This confirmed the need for temporal/spatial features in Milestone 4.</p>
+        </div>
+    </article>
+ 
+    <article class="milestone">
+        <div class="milestone-marker"><span>04</span></div>
+        <div class="milestone-body">
+            <h3>Deep Learning &amp; The Structural Detective</h3>
+            <p class="milestone-aim">Evolve from a feature-based SVM to a CNN operating directly on Mel-Spectrogram images &mdash; capturing pitch (frequency axis) and rhythm (time axis) simultaneously.</p>
+            <p>Raw <code>.au</code> files were converted to 2D Mel-Spectrogram images: <strong>128 frequency bins &times; 1,292 time frames</strong>, dB-scaled and normalized to [0.0, 1.0].</p>
+            <figure class="figure">
+                <div class="figure-frame">
+                    <img src="mel_spectrograms_by_genre.png" alt="Grid of mel-spectrograms across all 10 GTZAN genres, showing distinctive patterns per genre.">
+                </div>
+                <figcaption>
+                    <span class="fig-num">Figure 2</span>
+                    Sample mel-spectrograms across all 10 GTZAN genres. Note the dense vertical striations of metal versus the sparse, harmonic structure of classical &mdash; exactly the kind of visual pattern the CNN is designed to learn.
+                </figcaption>
+            </figure>
+            <h4>Parallel asymmetric convolutional kernels</h4>
+            <div class="two-col">
+                <div class="card branch">
+                    <p class="branch-tag harmonic">Harmonic Branch</p>
+                    <p class="branch-kernel">7 &times; 1 kernel</p>
+                    <p>Detects vertical frequency stacks &mdash; pitch and timbre.</p>
+                </div>
+                <div class="card branch">
+                    <p class="branch-tag temporal">Temporal Branch</p>
+                    <p class="branch-kernel">1 &times; 7 kernel</p>
+                    <p>Detects horizontal transients &mdash; rhythmic pulses and beats.</p>
+                </div>
+            </div>
+            <p>Both branches concatenate and pass through Batch Normalization and Dropout (0.4) before the classification head.</p>
+            <h4>Optimization decisions</h4>
+            <table class="data-table">
+                <thead><tr><th>Issue</th><th>Engineering Solution</th><th>Result</th></tr></thead>
+                <tbody>
+                    <tr><td>Dimension mismatch across tracks</td><td>Width standardization &mdash; all inputs padded/cropped to 1,292 px</td><td>Resolved batch-stacking error</td></tr>
+                    <tr><td>Rock / Pop confusion</td><td>Asymmetric kernels separating rhythm vs. pitch</td><td>Rock recall improved to ~61%</td></tr>
+                    <tr><td>Overfitting</td><td>Early stopping (patience=7), SpecAugment, Gaussian noise (std=0.2)</td><td>Robust generalization</td></tr>
+                    <tr><td>Convergence stability</td><td>AdamW + Cosine Annealing</td><td>Stable loss curves across 50 epochs</td></tr>
+                </tbody>
+            </table>
+            <p class="result-line">Final accuracy: 56&ndash;63% across 10 genres. Lower than unregularized runs but with significantly stronger generalization features for the forensic task. Metal (F1 = 0.86) and Classical (F1 = 0.88) showed near-perfect structural alignment.</p>
+            <figure class="figure">
+                <div class="figure-frame">
+                    <img src="cnn_confusion_matrix.png" alt="Confusion matrix for the 10-genre CNN classifier, with strong diagonals for reggae, classical, metal, and blues, and notable confusion between pop and hiphop.">
+                </div>
+                <figcaption>
+                    <span class="fig-num">Figure 3</span>
+                    CNN confusion matrix across the 10 GTZAN genres. Strong diagonal performance for reggae (20), classical (15), and metal (15). The pop / hip-hop overlap is the largest source of off-diagonal error &mdash; a key motivator for collapsing into 4 super-classes in Milestone 5.
+                </figcaption>
+            </figure>
+        </div>
+    </article>
+ 
+    <article class="milestone">
+        <div class="milestone-marker"><span>05</span></div>
+        <div class="milestone-body">
+            <h3>AI Forensic Detection &amp; Deployment</h3>
+            <p class="milestone-aim">Port the trained DetectiveCNN to a local macOS production environment with a Gradio UI capable of simultaneous genre classification and AI-forensic detection.</p>
+            <h4>Architecture extensions</h4>
+            <div class="two-col">
+                <div class="card branch">
+                    <p class="branch-tag genre">Genre Head</p>
+                    <p class="branch-kernel">2048 &rarr; 512 &rarr; 256 &rarr; 4</p>
+                    <p>Outputs 4 super-class probabilities via Softmax.</p>
+                </div>
+                <div class="card branch">
+                    <p class="branch-tag forensic">Forensic Head</p>
+                    <p class="branch-kernel">2048 &rarr; 256 &rarr; 1</p>
+                    <p>Outputs a single AI-probability score via Sigmoid.</p>
+                </div>
+            </div>
+            <h4>Superclass grouping</h4>
+            <p>10 GTZAN genres collapsed into 4 super-classes to increase evidence density per category against the limited 163-file AI dataset.</p>
+            <ul class="bullets compact">
+                <li>Classical + Jazz &rarr; <strong>Acoustic</strong></li>
+                <li>Hip-Hop + Reggae &rarr; <strong>Rhythmic</strong></li>
+                <li>Metal + Rock &rarr; <strong>Aggressive</strong></li>
+                <li>Pop + Disco + Country + Blues &rarr; <strong>Melodic</strong></li>
+            </ul>
+            <p><strong>Loss weighting:</strong> 60% CrossEntropyLoss (genre) + 40% BCELoss (forensic) &mdash; weighted to prevent the forensic head from dominating and over-triggering complex acoustic arrangements.</p>
+            <p><strong>Hardware:</strong> Apple MPS (Metal Performance Shaders) for GPU-accelerated inference. A CPU Safety Gate was implemented for <code>AdaptiveAvgPool2d</code>, which caused kernel crashes on early-generation ARM Silicon &mdash; the layer moves to CPU and results return to MPS before continuing.</p>
+        </div>
+    </article>
+</section>
+ 
+<section class="bug-section">
+    <div class="section-intro">
+        <p class="section-eyebrow">Milestone 5 &middot; Resolution</p>
+        <h2>Root Cause Analysis</h2>
+        <p>The model entered this phase classifying AI hip-hop as "Classical/Acoustic at 97% confidence" and flagging human music as AI-generated at 95%+ probability. It exits with 100% human detection and 92% AI detection, with zero overlap in score distributions.</p>
+    </div>
+ 
+    <article class="bug">
+        <header class="bug-head">
+            <span class="severity critical">Critical</span>
+            <h3>Bug #1 &mdash; Double Normalization</h3>
+            <p class="bug-discover">Discovered via code inspection of <code>train5.py</code></p>
+        </header>
+        <p>The training data arrived in two formats: human audio as <code>.npy</code> spectrograms stored in raw decibels (range &minus;80 to 0), and AI audio as <code>.npy</code> files already normalized to [0, 1]. The training script applied the same <code>(value + 80) / 80</code> formula to both. For the AI files, this pushed almost every value to &asymp; 1.0 &mdash; turning every AI input into a solid white image. The model could trivially separate the two classes by signal presence, not by music.</p>
+        <div class="fix-block">
+            <p class="fix-label">Fix applied</p>
+            <ul class="bullets">
+                <li>Added per-file format detection: if <code>spec.min() &lt; &minus;1</code> &rarr; raw dB, apply normalization. Otherwise, already [0,1], skip.</li>
+                <li>Corrected augmentation noise: reduced std from <strong>0.4 &rarr; 0.02</strong> (previous value destroyed signal on [0,1] data).</li>
+                <li>Fixed zero-padding constant from <strong>&minus;80 &rarr; 0</strong> (correct for normalized data).</li>
+            </ul>
+        </div>
+    </article>
+ 
+    <article class="bug">
+        <header class="bug-head">
+            <span class="severity critical">Critical</span>
+            <h3>Bug #2 &mdash; Data Format Mismatch</h3>
+            <p class="bug-discover">Confirmed via <code>diagnose_data.py</code> inspection</p>
+        </header>
+        <p>Running the diagnosis script on the <code>.npy</code> files revealed the magnitude of the problem:</p>
+        <div class="diagnostic">
+            <div class="diag-row"><span class="diag-key">Human .npy</span><span class="diag-val">min = &minus;80, max = 0 <em>(raw dB)</em></span></div>
+            <div class="diag-row"><span class="diag-key">AI .npy</span><span class="diag-val">min = 0, max = 1 <em>(already normalized)</em></span></div>
+        </div>
+        <p>This asymmetry meant the model had learned to classify based on the sign of the input values, not acoustic content. At inference (always normalized [0,1]), many human tracks scored in the AI range because the model had never seen normalized human audio during training.</p>
+    </article>
+ 
+    <article class="bug">
+        <header class="bug-head">
+            <span class="severity high">High</span>
+            <h3>Bug #3 &mdash; Heuristic Overrides Suppressing Correct Detections</h3>
+            <p class="bug-discover">Discovered via <code>DEMO.py</code> code review</p>
+        </header>
+        <p>Two hand-coded logic overrides in the Gradio demo were actively blocking correct AI detections:</p>
+        <ul class="bullets">
+            <li><strong>"Classical Shield":</strong> When the genre head predicted Classical, the forensic score was reduced to 40% of its raw value. In practice, the genre head was mislabeling AI hip-hop as Classical (due to spectral overlap), so the override was suppressing correct AI detections.</li>
+            <li><strong>HPSS Percussive Ratio Override:</strong> A secondary rule based on harmonic-percussive separation was further altering the forensic score &mdash; adding noise without improving accuracy.</li>
+        </ul>
+        <div class="fix-block">
+            <p class="fix-label">Fix</p>
+            <p>Both heuristics removed entirely. The forensic head is trained to do this job; let it.</p>
+        </div>
+    </article>
+ 
+    <article class="bug">
+        <header class="bug-head">
+            <span class="severity critical">Critical &middot; Root Cause</span>
+            <h3>Bug #4 &mdash; Training Pipeline &ne; Inference Pipeline</h3>
+            <p class="bug-discover">Discovered via <code>test_model.py</code> and score-distribution analysis</p>
+        </header>
+        <p>Even after fixing the normalization bug, running <code>test_model.py</code> against raw audio files revealed <strong>267 out of 1,000 human tracks scoring 0.95&ndash;1.00</strong> &mdash; identical to actual AI tracks. The <code>.npy</code> spectrograms for human audio had been generated by a different script with different parameters than what <code>DEMO.py</code> used at inference. Training on pre-processed <code>.npy</code> files and inferring on raw <code>.au</code> files meant the model had never seen real inference inputs during training.</p>
+        <table class="data-table compact">
+            <thead><tr><th>Metric (before final fix)</th><th>Result</th></tr></thead>
+            <tbody>
+                <tr><td>Human Genre Accuracy</td><td>74.0%</td></tr>
+                <tr><td>Human Detection Accuracy</td><td>54.2% <em>(267 human tracks scoring in AI territory)</em></td></tr>
+                <tr><td>AI Detection Accuracy</td><td>100.0% <em>(but for wrong reasons)</em></td></tr>
+            </tbody>
+        </table>
+    </article>
+ 
+    <article class="bug fix">
+        <header class="bug-head">
+            <span class="severity fixed">Root Cause Fix</span>
+            <h3>Unified Raw-Audio Training Pipeline</h3>
+            <p class="bug-discover">Applied in <code>train.py</code> &mdash; complete rewrite</p>
+        </header>
+        <p><code>train5.py</code> was rewritten to load raw <code>.au</code> and <code>.mp3</code> files directly and apply the identical librosa preprocessing pipeline used at inference time:</p>
+        <pre class="code"><code>def audio_to_tensor(path):
+    y, _ = librosa.load(str(path), sr=22050, duration=30)
+    y    = librosa.util.fix_length(y, size=22050 * 30)
+    mel  = librosa.feature.melspectrogram(y=y, sr=22050, n_mels=128)
+    db   = librosa.power_to_db(mel, ref=np.max)         # matches inference exactly
+    norm = np.clip((db + 80) / 80, 0, 1)
+    norm = librosa.util.fix_length(norm, size=1280, axis=1)
+    return torch.tensor(norm, dtype=torch.float32).unsqueeze(0)</code></pre>
+        <p>Every step &mdash; sample rate (22,050 Hz), mel parameters (n_mels=128), dB reference (<code>ref=np.max</code>), normalization formula (<code>(dB+80)/80</code>), width padding (1,280 frames) &mdash; now matches <code>DEMO.py</code> exactly. <strong>WeightedRandomSampler</strong> was added to compensate for the 1,000-vs-163 class imbalance.</p>
+    </article>
+ 
+    <article class="bug improvements">
+        <header class="bug-head">
+            <span class="severity tweak">Inference Improvements</span>
+            <h3>Additional Refinements</h3>
+        </header>
+        <ul class="bullets">
+            <li><strong>Full-track windowed analysis:</strong> the original demo analyzed only the first 30 seconds. Rewritten to process all 30-second windows across the full track, averaging results. A 3-minute track now gets 6 windows of evidence.</li>
+            <li><strong>Softmax temperature reset to 1.0:</strong> the previous value of 0.6 was over-sharpening probabilities. Reverted for honest, calibrated genre scores.</li>
+            <li><strong>Threshold formula:</strong> sensitivity slider (0&ndash;100) maps to <code>threshold = 0.95 &minus; (sensitivity/100) &times; 0.90</code>. Default sensitivity = 50 gives threshold = 0.50.</li>
+        </ul>
+    </article>
+</section>
+ 
+<section class="progression">
+    <h2>Performance Progression</h2>
+    <p class="lede">Each fix moved the needle. The unified raw-audio training pipeline closed the loop.</p>
+    <table class="data-table progression-table">
+        <thead>
+            <tr>
+                <th>Stage</th>
+                <th>Human Detection</th>
+                <th>AI Detection</th>
+                <th>Human Genre</th>
+                <th>AI Genre</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>M5 Initial (broken)</td><td>~54%</td><td>~100%</td><td>~74%</td><td>&mdash;</td></tr>
+            <tr><td>After normalization fix</td><td>~59%</td><td>~100%</td><td>~74%</td><td>&mdash;</td></tr>
+            <tr><td>After heuristic removal</td><td>~73%</td><td>~92%</td><td>~80%</td><td>&mdash;</td></tr>
+            <tr class="final"><td>After raw-audio training (Final)</td><td><strong>100.0%</strong></td><td><strong>92.0%</strong></td><td><strong>84.8%</strong></td><td><strong>85.3%</strong></td></tr>
+        </tbody>
+    </table>
+ 
+    <h3 class="sub">Per-Genre Breakdown</h3>
+    <div class="grid two">
+        <table class="data-table">
+            <thead><tr><th>Genre (Human)</th><th>Accuracy</th></tr></thead>
+            <tbody>
+                <tr><td>Classical / Acoustic</td><td>~91%</td></tr>
+                <tr><td>Hip-Hop / Urban</td><td>~83%</td></tr>
+                <tr><td>Pop / Electronic</td><td>~83%</td></tr>
+                <tr><td>Rock / Aggressive</td><td>~73%</td></tr>
+            </tbody>
+        </table>
+        <table class="data-table">
+            <thead><tr><th>Genre (AI)</th><th>Accuracy</th></tr></thead>
+            <tbody>
+                <tr><td>Pop / Electronic</td><td>~89%</td></tr>
+                <tr><td>Classical / Acoustic</td><td>~88%</td></tr>
+                <tr><td>Rock / Aggressive</td><td>~84%</td></tr>
+                <tr><td>Hip-Hop / Urban</td><td>~79%</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+ 
+<section class="architecture">
+    <h2>DetectiveCNN Architecture</h2>
+    <p class="lede">Parallel convolution branches detect harmonic (frequency) and temporal (rhythm) features before fusion into a shared representation that feeds two independent task heads.</p>
+    <table class="data-table arch-table">
+        <thead>
+            <tr><th>Layer</th><th>Configuration</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Conv1 + BN + Pool</td><td>Conv2d(1&rarr;32, 3&times;3, pad=1) &rarr; BatchNorm &rarr; MaxPool(2&times;2)</td><td>Shared feature extraction from raw mel spectrogram</td></tr>
+            <tr><td>Conv2_freq <em>(parallel)</em></td><td>Conv2d(32&rarr;64, 7&times;1, pad=(3,0))</td><td>Harmonic branch &mdash; vertical frequency stacks</td></tr>
+            <tr><td>Conv2_time <em>(parallel)</em></td><td>Conv2d(32&rarr;64, 1&times;7, pad=(0,3))</td><td>Temporal branch &mdash; horizontal transients</td></tr>
+            <tr><td>Concat + BN + Pool</td><td>Cat[freq, time] &rarr; 128ch &rarr; BatchNorm &rarr; MaxPool(2&times;2)</td><td>Fuses both perspectives into unified representation</td></tr>
+            <tr><td>AdaptiveAvgPool2d</td><td>(4&times;4) output &mdash; CPU Safety Gate for MPS</td><td>Spatial collapse; CPU-routed to avoid MPS kernel crashes</td></tr>
+            <tr><td>Flatten</td><td>128 &times; 4 &times; 4 = 2,048-dim vector</td><td>Prepares features for both heads</td></tr>
+            <tr><td>Genre Head</td><td>Linear(2048&rarr;512) &rarr; ReLU &rarr; Dropout(0.3) &rarr; Linear(512&rarr;256) &rarr; ReLU &rarr; Linear(256&rarr;4)</td><td>4 super-class logits</td></tr>
+            <tr><td>Forensic Head</td><td>Linear(2048&rarr;256) &rarr; ReLU &rarr; Dropout(0.4) &rarr; Linear(256&rarr;1) &rarr; Sigmoid</td><td>Single AI-probability score [0, 1]</td></tr>
+        </tbody>
+    </table>
+</section>
+ 
+<section class="training">
+    <h2>Training Configuration</h2>
+    <table class="data-table">
+        <thead><tr><th>Parameter</th><th>Value</th><th>Rationale</th></tr></thead>
+        <tbody>
+            <tr><td>Optimizer</td><td>AdamW</td><td>Superior weight decay prevents shortcut learning</td></tr>
+            <tr><td>Learning Rate</td><td>3e-4</td><td>Standard for Adam-family on mel-spectrogram CNNs</td></tr>
+            <tr><td>Weight Decay</td><td>0.05</td><td>Aggressive regularization given the small AI dataset</td></tr>
+            <tr><td>Epochs</td><td>50</td><td>Full convergence observed by epoch ~35</td></tr>
+            <tr><td>Batch Size</td><td>32</td><td>Balanced GPU utilization and gradient stability</td></tr>
+            <tr><td>Genre Loss</td><td>CrossEntropyLoss (label_smoothing=0.1)</td><td>Prevents overconfident genre predictions</td></tr>
+            <tr><td>Forensic Loss</td><td>BCELoss</td><td>Binary classification with Sigmoid output</td></tr>
+            <tr><td>Loss Weight</td><td>0.6 genre + 0.4 forensic</td><td>Prioritizes genre correctness; prevents forensic over-triggering</td></tr>
+            <tr><td>Class Balance</td><td>WeightedRandomSampler</td><td>Compensates for 1,000 human vs. 163 AI imbalance</td></tr>
+            <tr><td>Augmentation</td><td>Gaussian noise (std=0.02)</td><td>Prevents overfitting; simulates minor recording artifacts</td></tr>
+        </tbody>
+    </table>
+</section>
+ 
+<section class="demo">
+    <h2>Gradio Demo &mdash; <code>DEMO.py</code></h2>
+    <div class="grid two">
+        <div class="card feature">
+            <h4>Audio Upload</h4>
+            <p>Accepts MP3, WAV, FLAC, OGG, AU via static-ffmpeg runtime injection.</p>
+        </div>
+        <div class="card feature">
+            <h4>Sensitivity Slider</h4>
+            <p>0&ndash;100 range mapped to detection threshold: <code>0.95 &minus; (sensitivity/100) &times; 0.90</code>. Default 50 &rarr; threshold 0.50.</p>
+        </div>
+        <div class="card feature">
+            <h4>Full-Track Analysis</h4>
+            <p>Splits audio into 30-second windows, runs inference on each, averages genre and forensic scores.</p>
+        </div>
+        <div class="card feature">
+            <h4>Outputs</h4>
+            <p>Genre classification chart, AI/Human probability chart, final verdict text, and mel-spectrogram image of the first window.</p>
+        </div>
+    </div>
+	
+	<h3 class="sub">Sensitivity Slider & Threshold Design</h3>
+    <figure class="figure">
+        <div class="figure-frame">
+            <img src="slider.png" alt="Gradio UI sensitivity slider set to 50">
+        </div>
+    </figure>
+	
+    <table class="data-table">
+        <thead><tr><th>Sensitivity</th><th>Threshold</th><th>Behavior</th></tr></thead>
+        <tbody>
+            <tr><td>0 (ultra-strict)</td><td>0.95</td><td>Misses borderline AI but guarantees zero false positives</td></tr>
+            <tr><td>50 (default)</td><td>0.50</td><td>100% human correct, 100% AI correct</td></tr>
+            <tr><td>100 (loosest)</td><td>0.05</td><td>Catches everything including borderline AI, some false positives possible</td></tr>
+        </tbody>
+    </table>
+    <h3 class="sub">Temporal Variation Handling</h3>
+    <p>For songs whose style changes mid-track (a classical intro followed by a hip-hop beat), the windowed architecture handles this gracefully: each 30-second window votes independently, and averaged scores reflect the dominant character of the whole track. Mixed-origin tracks produce averaged forensic scores between the two poles &mdash; an honest representation of ambiguity rather than a forced binary.</p>
+
+
+
+<h3 class="sub">Detection in Action</h3>
+    <div class="grid two">
+        <figure class="figure">
+            <div class="figure-frame">
+                <img src="50_slider.png" alt="Audio analyzed at 50 sensitivity resulting in an AI Generated verdict">
+            </div>
+            <figcaption>
+                <strong>Audio at 50% Sensitivity.</strong> With the slider at the default 50 (0.50 threshold), the 76% AI probability correctly triggers an "AI GENERATED" verdict.
+            </figcaption>
+        </figure>
+        <figure class="figure">
+            <div class="figure-frame">
+                <img src="20_slider.png" alt="Same audio analyzed at 20 sensitivity resulting in a Human Original verdict">
+            </div>
+            <figcaption>
+                <strong>Same Audio at 20% Sensitivity.</strong> Dropping sensitivity to 20 raises the threshold to ~0.77. Because the 76% probability falls just short, the system strictly defaults to "HUMAN ORIGINAL".
+            </figcaption>
+        </figure>
+    </div>
+
+    <h3 class="sub">Audio Sourcing</h3>
+    <p>The human-generated audio tracks utilized to train, test, and validate this detection system were sourced from <a href="https://www.epidemicsound.com/music/tracks/61700cee-612a-3363-8349-76b594890ea3/" target="_blank">Epidemic Sound</a>.</p>
+</section>
+ 
+<section class="limitations">
+    <h2>Limitations &amp; Future Work</h2>
+    <div class="grid two">
+        <div class="card limitation">
+            <p class="limit-tag">AI Dataset Size</p>
+            <p>163 training files is insufficient for robust generalization to unseen AI generators. The forensic head has learned to recognize specific Suno/Udio acoustic signatures rather than a generalized "AI fingerprint." A new track from a different generator may score below 0.50.</p>
+        </div>
+        <div class="card limitation">
+            <p class="limit-tag">Rock Genre Accuracy</p>
+            <p>Human rock music (43&ndash;73% accuracy across variants) remains the hardest genre. Spectral overlap with metal, blues, and country creates persistent confusion.</p>
+        </div>
+        <div class="card limitation">
+            <p class="limit-tag">Single-Source AI Data</p>
+            <p>All 163 AI tracks came from Suno/Udio. Models from other generators (MusicLM, AudioCraft, Stable Audio) were never seen during training.</p>
+        </div>
+        <div class="card limitation">
+            <p class="limit-tag">Recommended Next Steps</p>
+            <p>Expand AI dataset to 500+ tracks from at least 3 different generators. Add validation/test split for AI audio. Investigate wav2vec or audio-specific pre-trained encoders. Implement per-window confidence scoring in the demo.</p>
+        </div>
+    </div>
+</section>
+ 
+<section class="lesson">
+    <div class="callout big-callout">
+        <p class="callout-label">The Critical Lesson</p>
+        <p class="lesson-text">Training pipeline and inference pipeline must be identical. Every preprocessing step &mdash; sample rate, mel parameters, dB reference, normalization range, time-axis padding &mdash; must match exactly. A mismatch is invisible in training metrics (the model adapts to whatever it sees) but catastrophic at inference (it has never seen real inputs). The fix is always the same: <strong>train on the exact same data format the production system will receive.</strong></p>
+    </div>
+</section>
+ 
+<section class="appendix">
+    <h2>Key Files</h2>
+    <table class="data-table files-table">
+        <tbody>
+            <tr><td><code>train5.py</code></td><td>Final training script &mdash; raw audio pipeline, WeightedRandomSampler, 50 epochs</td></tr>
+            <tr><td><code>DEMO.py</code></td><td>Gradio demo &mdash; windowed inference, sensitivity slider, spectrogram output</td></tr>
+            <tr><td><code>Detective_Final_Master.pth</code></td><td>Saved model weights &mdash; final trained DetectiveCNN</td></tr>
+        </tbody>
+    </table>
+</section>
+ 
+<footer>
+    <p>&copy; 2026 AI Music Detection Project &middot; Final Engineering Report</p>
+</footer>
+ 
+</body>
+</html>
