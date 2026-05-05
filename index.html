@@ -103,12 +103,31 @@
  
 <section class="milestones">
     <h2>Project Milestones</h2>
- 
-<figure class="figure" style="margin-bottom: 2rem;">
-			<div class="figure-frame" style="border: none; background: transparent; padding: 0;">
-				<img src="milestone.png" alt="Table detailing the 5 project milestones from Data Architecture to AI vs. Human Discriminator" style="width: 100%; height: auto; filter: invert(0.92) hue-rotate(180deg); border-radius: 8px;">
-			</div>
-	</figure>
+    <p>
+        Milestone 1: Data Architecture & Preprocessing:
+        <br>
+        Validate 1,000 GTZAN tracks; handle corrupted .au files (e.g., jazz.00054). Implement a stratified 70/15/15 split to ensure genre balance across training and testing.
+    </p>
+    <p>
+        Milestone 2: Multi-Dimensional Feature Engineering:
+        <br>
+        Extract acoustic "fingerprints" using Librosa. Key metrics: MFCCs (timbre), Spectral Centroid (brightness), Chroma (harmony), and RMS Energy (amplitude). Export to structured CSV.
+    </p>
+    <p>
+        Milestone 3: Traditional ML & Baseline Performance:
+        <br>
+        Benchmark classification using Random Forest and SVM. Apply StandardScaler for normalization. Evaluate via Confusion Matrices to identify "style-overlap" (e.g., Rock vs. Metal).
+    </p>
+    <p>
+        Milestone 4: Deep Learning & Neural Architectures:
+        <br>
+        Convert audio to Mel-Spectrograms (image-based sound). Train a Convolutional Neural Network (CNN) to "see" musical patterns, leveraging computer vision for higher accuracy.
+    </p>
+    <p>
+        Milestone 5: AI vs. Human Discriminator:
+        <br>
+        Pivot to binary classification. Train the model on a new dataset of Suno/Udio (AI) vs. GTZAN (Human) to identify "spectral artifacts" unique to generated audio.
+    </p>
  
  
     <article class="milestone">
