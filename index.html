@@ -11,7 +11,7 @@
         }
         
         .figure-frame img {
-            width: 100% !important;
+            width: 90% !important;
             height: auto !important;
             display: block;
             border-radius: 8px; /* Adds a nice slight curve to your UI screenshots */
@@ -104,27 +104,27 @@
 <section class="milestones">
     <h2>Project Milestones</h2>
     <p>
-        Milestone 1: Data Architecture & Preprocessing:
+        <strong>Milestone 1: Data Architecture & Preprocessing:</strong>
         <br>
         Validate 1,000 GTZAN tracks; handle corrupted .au files (e.g., jazz.00054). Implement a stratified 70/15/15 split to ensure genre balance across training and testing.
     </p>
     <p>
-        Milestone 2: Multi-Dimensional Feature Engineering:
+        <strong>Milestone 2: Multi-Dimensional Feature Engineering:</strong>
         <br>
         Extract acoustic "fingerprints" using Librosa. Key metrics: MFCCs (timbre), Spectral Centroid (brightness), Chroma (harmony), and RMS Energy (amplitude). Export to structured CSV.
     </p>
     <p>
-        Milestone 3: Traditional ML & Baseline Performance:
+        <strong>Milestone 3: Traditional ML & Baseline Performance:</strong>
         <br>
         Benchmark classification using Random Forest and SVM. Apply StandardScaler for normalization. Evaluate via Confusion Matrices to identify "style-overlap" (e.g., Rock vs. Metal).
     </p>
     <p>
-        Milestone 4: Deep Learning & Neural Architectures:
+        <strong>Milestone 4: Deep Learning & Neural Architectures:</strong>
         <br>
         Convert audio to Mel-Spectrograms (image-based sound). Train a Convolutional Neural Network (CNN) to "see" musical patterns, leveraging computer vision for higher accuracy.
     </p>
     <p>
-        Milestone 5: AI vs. Human Discriminator:
+        <strong>Milestone 5: AI vs. Human Discriminator:</strong>
         <br>
         Pivot to binary classification. Train the model on a new dataset of Suno/Udio (AI) vs. GTZAN (Human) to identify "spectral artifacts" unique to generated audio.
     </p>
